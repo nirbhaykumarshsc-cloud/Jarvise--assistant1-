@@ -1,0 +1,102 @@
+import pyttsx3
+import speech_recognition as sr
+import datetime
+import wikipedia
+import webbrowser
+import os
+
+# Voice Engine Setup
+engine = pyttsx3.init('sapi5' if os.name == 'nt' else 'nsss')
+voices = engine.getProperty('voices')
+# Male voice ke liye index 0, Female voice ke liye index 1
+engine.setProperty('voice', voices[0].id)
+engine.setProperty('rate', 175)  # Bolne ki speed
+
+def speak(audio):
+    """Text ko speech me convert karta hai"""
+    print(f"JARVIS: {audio}")
+    engine.say(audio)
+    engine.runAndWait()
+
+def wish_me():
+    """Waqt ke hisab se greet karta hai"""
+    hour = int(datetime.datetime.now().hour)
+    if 0 <= hour < 12:
+        speak("Good Morning Sir!")
+    elif 12 <= hour < 18:
+        speak("Good Afternoon Sir!")
+    else:
+        speak("Good Evening Sir!")
+    speak("I am Jarvis. How can I assist you today?")
+
+def take_command():
+    """Mic se voice sunkar text me convert karta hai"""
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("\nListening...")
+        r.pause_threshold = 1
+        r.adjust_for_ambient_noise(source, duration=0.5)
+        audio = r.listen(source)
+
+    try:
+        print("Recognizing...")
+        query = r.recognize_google(audio, language='en-in')
+        print(f"You said: {query}\n")
+    except sr.UnknownValueError:
+        speak("Sorry, I could not understand the audio. Please say that again.")
+        return "None"
+    except sr.RequestError:
+        speak("Network issue. Please check your internet connection.")
+        return "None"
+    except Exception as e:
+        return "None"
+
+    return query.lower()
+
+# Main Loop
+if __name__ == "__main__":
+    wish_me()
+    
+    while True:
+        query = take_command()
+
+        # Exit Command
+        if 'quit' in query or 'exit' in query or 'bye' in query or 'stop' in query:
+            speak("Goodbye Sir! Have a productive day ahead.")
+            break
+
+        # Wikipedia Search
+        elif 'wikipedia' in query:
+            speak('Searching Wikipedia...')
+            query = query.replace("wikipedia", "").strip()
+            try:
+                results = wikipedia.summary(query, sentences=2)
+                speak("According to Wikipedia")
+                speak(results)
+            except Exception:
+                speak("Sorry, I couldn't find relevant results on Wikipedia.")
+
+        # Websites Open Karna
+        elif 'open youtube' in query:
+            speak("Opening YouTube")
+            webbrowser.open("https://youtube.com")
+
+        elif 'open google' in query:
+            speak("Opening Google")
+            webbrowser.open("https://google.com")
+
+        elif 'open github' in query:
+            speak("Opening GitHub")
+            webbrowser.open("https://github.com")
+
+        # Current Time Batana
+        elif 'the time' in query or 'what is the time' in query:
+            str_time = datetime.datetime.now().strftime("%I:%M %p")
+            speak(f"Sir, the time is {str_time}")
+
+        # Basic Conversational Responses
+        elif 'how are you' in query:
+            speak("I am fully operational and ready to help, Sir.")
+
+        elif 'who are you' in query:
+            speak("I am Jarvis, your personal desktop virtual assistant.")
